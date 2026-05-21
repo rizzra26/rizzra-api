@@ -9,80 +9,24 @@ import (
 )
 
 type StackHandler struct {
-	catRepo  *repository.StackCategoryRepo
 	itemRepo *repository.StackItemRepo
 }
 
 func NewStackHandler(pool *pgxpool.Pool) *StackHandler {
 	return &StackHandler{
-		catRepo:  repository.NewStackCategoryRepo(pool),
 		itemRepo: repository.NewStackItemRepo(pool),
 	}
 }
 
-// ---- Categories ----
-
-func (h *StackHandler) ListCategories(c fiber.Ctx) error {
-	categories, err := h.catRepo.List(c.Context())
+func (h *StackHandler) ListItems(c fiber.Ctx) error {
+	items, err := h.itemRepo.List(c.Context())
 	if err != nil {
-		return util.Error(c, 500, "Failed to fetch categories")
+		return util.Error(c, 500, "Failed to fetch stack items")
 	}
-	return util.OK(c, categories)
+	return util.OK(c, items)
 }
-
-type createCategoryRequest struct {
-	Name        string  `json:"name" validate:"required"`
-	Slug        string  `json:"slug"`
-	Description *string `json:"description"`
-}
-
-func (h *StackHandler) CreateCategory(c fiber.Ctx) error {
-	var req createCategoryRequest
-	if err := c.Bind().JSON(&req); err != nil {
-		return util.Error(c, 400, "Invalid request body")
-	}
-
-	cat := &models.StackCategory{
-		Name:        req.Name,
-		Slug:        req.Slug,
-		Description: req.Description,
-	}
-	if err := h.catRepo.Create(c.Context(), cat); err != nil {
-		return util.Error(c, 500, "Failed to create category")
-	}
-
-	return util.Created(c, cat)
-}
-
-func (h *StackHandler) UpdateCategory(c fiber.Ctx) error {
-	var req createCategoryRequest
-	if err := c.Bind().JSON(&req); err != nil {
-		return util.Error(c, 400, "Invalid request body")
-	}
-
-	cat := &models.StackCategory{
-		Name:        req.Name,
-		Slug:        req.Slug,
-		Description: req.Description,
-	}
-	if err := h.catRepo.Update(c.Context(), c.Params("id"), cat); err != nil {
-		return util.Error(c, 500, "Failed to update category")
-	}
-
-	return util.OK(c, cat)
-}
-
-func (h *StackHandler) DeleteCategory(c fiber.Ctx) error {
-	if err := h.catRepo.SoftDelete(c.Context(), c.Params("id")); err != nil {
-		return util.Error(c, 404, "Category not found")
-	}
-	return util.Deleted(c)
-}
-
-// ---- Items ----
 
 type createItemRequest struct {
-	CategoryID  string  `json:"category_id" validate:"required,uuid"`
 	Name        string  `json:"name" validate:"required"`
 	Description *string `json:"description"`
 }
@@ -94,7 +38,6 @@ func (h *StackHandler) CreateItem(c fiber.Ctx) error {
 	}
 
 	item := &models.StackItem{
-		CategoryID:  req.CategoryID,
 		Name:        req.Name,
 		Description: req.Description,
 	}

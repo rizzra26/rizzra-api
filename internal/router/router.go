@@ -2,14 +2,14 @@ package router
 
 import (
 	"github.com/gofiber/fiber/v3"
-	"github.com/gofiber/fiber/v3/middleware/static"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/rizzra/api/internal/cloudinary"
 	"github.com/rizzra/api/internal/handlers"
 	"github.com/rizzra/api/internal/middleware"
 	"github.com/rizzra/api/internal/repository"
 )
 
-func Setup(app *fiber.App, pool *pgxpool.Pool, jwtSecret, uploadDir string) {
+func Setup(app *fiber.App, pool *pgxpool.Pool, jwtSecret string, cld *cloudinary.Service) {
 	app.Use(middleware.CORS())
 
 	authHandler := handlers.NewAuthHandler(pool, jwtSecret)
@@ -19,9 +19,7 @@ func Setup(app *fiber.App, pool *pgxpool.Pool, jwtSecret, uploadDir string) {
 	stackHandler := handlers.NewStackHandler(pool)
 
 	projectRepo := repository.NewProjectRepo(pool)
-	uploadHandler := handlers.NewUploadHandler(projectRepo, uploadDir)
-
-	app.Use("/uploads", static.New(uploadDir))
+	uploadHandler := handlers.NewUploadHandler(projectRepo, cld)
 
 	// Public routes (no auth)
 	app.Post("/api/v1/auth/login", authHandler.Login)
@@ -33,7 +31,7 @@ func Setup(app *fiber.App, pool *pgxpool.Pool, jwtSecret, uploadDir string) {
 	public.Get("/letters/:id", letterHandler.Get)
 	public.Get("/projects", projectHandler.List)
 	public.Get("/projects/:id", projectHandler.Get)
-	public.Get("/stack/categories", stackHandler.ListCategories)
+	public.Get("/stack", stackHandler.ListItems)
 
 	// Protected routes (admin panel)
 	auth := app.Group("/api/v1")
@@ -53,12 +51,9 @@ func Setup(app *fiber.App, pool *pgxpool.Pool, jwtSecret, uploadDir string) {
 	auth.Delete("/projects/:id", projectHandler.Delete)
 
 	// Stack (mutations)
-	auth.Post("/stack/categories", stackHandler.CreateCategory)
-	auth.Put("/stack/categories/:id", stackHandler.UpdateCategory)
-	auth.Delete("/stack/categories/:id", stackHandler.DeleteCategory)
-	auth.Post("/stack/items", stackHandler.CreateItem)
-	auth.Put("/stack/items/:id", stackHandler.UpdateItem)
-	auth.Delete("/stack/items/:id", stackHandler.DeleteItem)
+	auth.Post("/stack", stackHandler.CreateItem)
+	auth.Put("/stack/:id", stackHandler.UpdateItem)
+	auth.Delete("/stack/:id", stackHandler.DeleteItem)
 
 	// Upload
 	auth.Post("/upload/cover", uploadHandler.Cover)

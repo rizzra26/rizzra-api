@@ -51,16 +51,12 @@ type createProjectRequest struct {
 	GithubURL   *string  `json:"github_url"`
 	DemoURL     *string  `json:"demo_url"`
 	CoverURL    *string  `json:"cover_url"`
-	Category    string   `json:"category" validate:"oneof=ai pure"`
 }
 
 func (h *ProjectHandler) Create(c fiber.Ctx) error {
 	var req createProjectRequest
 	if err := c.Bind().JSON(&req); err != nil {
 		return util.Error(c, 400, "Invalid request body")
-	}
-	if req.Category == "" {
-		req.Category = "pure"
 	}
 	if req.Tech == nil {
 		req.Tech = []string{}
@@ -85,9 +81,6 @@ func (h *ProjectHandler) Update(c fiber.Ctx) error {
 	var req createProjectRequest
 	if err := c.Bind().JSON(&req); err != nil {
 		return util.Error(c, 400, "Invalid request body")
-	}
-	if req.Category == "" {
-		req.Category = "pure"
 	}
 	if req.Tech == nil {
 		req.Tech = []string{}

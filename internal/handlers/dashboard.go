@@ -27,15 +27,10 @@ type monthCount struct {
 	Count int    `json:"count"`
 }
 
-type categoryCount struct {
-	Category string `json:"category"`
-	Count    int    `json:"count"`
-}
-
 func (h *DashboardHandler) Stats(c fiber.Ctx) error {
 	ctx := c.Context()
 
-	var lettersCount, projectsCount, categoriesCount, itemsCount int
+	var lettersCount, projectsCount, itemsCount int
 
 	if err := h.pool.QueryRow(ctx, `SELECT COUNT(*) FROM letters WHERE deleted_at IS NULL`).Scan(&lettersCount); err != nil {
 		return util.Error(c, 500, "Failed to fetch stats")
@@ -43,13 +38,7 @@ func (h *DashboardHandler) Stats(c fiber.Ctx) error {
 	if err := h.pool.QueryRow(ctx, `SELECT COUNT(*) FROM projects WHERE deleted_at IS NULL`).Scan(&projectsCount); err != nil {
 		return util.Error(c, 500, "Failed to fetch stats")
 	}
-	if err := h.pool.QueryRow(ctx, `SELECT COUNT(*) FROM stack_categories WHERE deleted_at IS NULL`).Scan(&categoriesCount); err != nil {
-		return util.Error(c, 500, "Failed to fetch stats")
-	}
-	err := h.pool.QueryRow(ctx,
-		`SELECT COUNT(*) FROM stack_items si JOIN stack_categories sc ON si.category_id = sc.id WHERE si.deleted_at IS NULL AND sc.deleted_at IS NULL`,
-	).Scan(&itemsCount)
-	if err != nil {
+	if err := h.pool.QueryRow(ctx, `SELECT COUNT(*) FROM stack_items WHERE deleted_at IS NULL`).Scan(&itemsCount); err != nil {
 		return util.Error(c, 500, "Failed to fetch stats")
 	}
 
@@ -78,26 +67,11 @@ func (h *DashboardHandler) Stats(c fiber.Ctx) error {
 		}
 	}
 
-	projectsByCategory := make([]categoryCount, 0)
-	prows, err := h.pool.Query(ctx,
-		`SELECT category, COUNT(*) FROM projects WHERE deleted_at IS NULL GROUP BY category`)
-	if err == nil {
-		defer prows.Close()
-		for prows.Next() {
-			var cc categoryCount
-			if err := prows.Scan(&cc.Category, &cc.Count); err == nil {
-				projectsByCategory = append(projectsByCategory, cc)
-			}
-		}
-	}
-
 	return util.OK(c, fiber.Map{
-		"letters_count":         lettersCount,
-		"projects_count":        projectsCount,
-		"stack_categories_count": categoriesCount,
-		"stack_items_count":     itemsCount,
-		"recent_letters":        recentLetters,
-		"letters_by_month":      lettersByMonth,
-		"projects_by_category":  projectsByCategory,
+		"letters_count":    lettersCount,
+		"projects_count":   projectsCount,
+		"stack_items_count": itemsCount,
+		"recent_letters":   recentLetters,
+		"letters_by_month": lettersByMonth,
 	})
 }

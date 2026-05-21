@@ -10,6 +10,7 @@ import (
 	"syscall"
 
 	"github.com/gofiber/fiber/v3"
+	"github.com/rizzra/api/internal/cloudinary"
 	"github.com/rizzra/api/internal/config"
 	"github.com/rizzra/api/internal/database"
 	"github.com/rizzra/api/internal/router"
@@ -20,6 +21,11 @@ func main() {
 	cfg, err := config.Load()
 	if err != nil {
 		log.Fatalf("failed to load config: %v", err)
+	}
+
+	cld, err := cloudinary.New(cfg.CloudinaryCloudName, cfg.CloudinaryAPIKey, cfg.CloudinaryAPISecret)
+	if err != nil {
+		log.Fatalf("failed to init cloudinary: %v", err)
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -48,7 +54,7 @@ func main() {
 		ErrorHandler: customErrorHandler,
 	})
 
-	router.Setup(app, pool, cfg.JWTSecret, cfg.UploadDir)
+	router.Setup(app, pool, cfg.JWTSecret, cld)
 
 	go func() {
 		quit := make(chan os.Signal, 1)

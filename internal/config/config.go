@@ -16,6 +16,10 @@ type Config struct {
 	JWTSecret  string `env:"JWT_SECRET"`
 	Port       int    `env:"PORT"`
 	UploadDir  string `env:"UPLOAD_DIR"`
+
+	CloudinaryCloudName string `env:"CLOUDINARY_CLOUD_NAME"`
+    CloudinaryAPIKey    string `env:"CLOUDINARY_API_KEY"`
+    CloudinaryAPISecret string `env:"CLOUDINARY_API_SECRET"`
 }
 
 func (c Config) DSN() string {

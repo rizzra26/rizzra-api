@@ -71,14 +71,14 @@ func (r *ProjectRepo) Create(ctx context.Context, p *models.Project) error {
 	p.OrderIndex = maxOrder + 1
 
 	return r.pool.QueryRow(ctx,
-		`INSERT INTO projects (name, description, tech, github_url, demo_url, cover_url, category, order_index) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id, order_index, created_at, updated_at`,
+		`INSERT INTO projects (name, description, tech, github_url, demo_url, cover_url, order_index) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id, order_index, created_at, updated_at`,
 		p.Name, p.Description, p.Tech, p.GithubURL, p.DemoURL, p.CoverURL, p.OrderIndex,
 	).Scan(&p.ID, &p.OrderIndex, &p.CreatedAt, &p.UpdatedAt)
 }
 
 func (r *ProjectRepo) Update(ctx context.Context, id string, p *models.Project) error {
 	return r.pool.QueryRow(ctx,
-		`UPDATE projects SET name = $1, description = $2, tech = $3, github_url = $4, demo_url = $5, cover_url = $6, category = $7, updated_at = NOW() WHERE id = $8 AND deleted_at IS NULL RETURNING id, order_index, created_at, updated_at`,
+		`UPDATE projects SET name = $1, description = $2, tech = $3, github_url = $4, demo_url = $5, cover_url = $6, updated_at = NOW() WHERE id = $7 AND deleted_at IS NULL RETURNING id, order_index, created_at, updated_at`,
 		p.Name, p.Description, p.Tech, p.GithubURL, p.DemoURL, p.CoverURL, id,
 	).Scan(&p.ID, &p.OrderIndex, &p.CreatedAt, &p.UpdatedAt)
 }
